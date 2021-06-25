@@ -12,6 +12,23 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
+      # temp fix : can't use buildx + load because of manifest error
+      # so we need to build the image the traditional way
+      - name: Temp build to check security issues
+        run: docker build -t bunkerized-nginx .
+
+      - name: Run Trivy security scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'bunkerized-nginx'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+
+      - name: Run autotest
+        run: docker run bunkerized-nginx test
+
       - name: Set variables
         run: |
           VER=$(cat VERSION | tr -d '\n')
